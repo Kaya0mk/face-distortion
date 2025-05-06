@@ -2,31 +2,28 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Face Distortion</title>
-
-  <!-- Include p5.js -->
+  <title>Facial Feature Mapping</title>
+  <!-- p5.js Library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
-
-  <!-- Include clmtrackr with a new working CDN link -->
-  <script src="https://cdn.jsdelivr.net/gh/auduno/clmtrackr@master/clmtrackr.min.js"></script>
-
+  <!-- clmtrackr Library -->
+  <script src="https://cdn.jsdelivr.net/npm/clmtrackr@1.1.2/build/clmtrackr.min.js"></script>
+  <!-- p5.js DOM Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.dom.min.js"></script>
   <style>
     body {
       margin: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      background-color: #111;
+      background-color: #000;
+      color: #0f0;
+      font-family: monospace;
     }
     canvas {
-      border: 2px solid white;
+      display: block;
+      margin: 0 auto;
+      image-rendering: pixelated; /* Retro pixelated effect */
     }
   </style>
 </head>
 <body>
-  <!-- Reference to sketch.js -->
   <script src="sketch.js"></script>
 </body>
 </html>
