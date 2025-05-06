@@ -1,99 +1,66 @@
 let video;
 let tracker;
-let distortionFactor = 1;
+let positions;
 
 function setup() {
   createCanvas(640, 480);
+  pixelDensity(1); // Ensures pixelated effect
   video = createCapture(VIDEO);
   video.size(width, height);
   video.hide();
 
-  // Wait for the library to load before initializing tracker
-  setTimeout(() => {
-    if (typeof clmtrackr === 'undefined') {
-      console.error('clmtrackr library not loaded!');
-      return;
-    }
+  // Initialize clmtrackr
+  tracker = new clm.tracker();
+  tracker.init();
+  tracker.start(video.elt);
 
-    // Initialize the clmtracker
-    tracker = new clm.tracker();
-    tracker.init();
-    tracker.start(video.elt);
-  }, 1000); // Delay of 1 second to make sure the library has loaded
+  textSize(12);
+  fill(0, 255, 0);
+  noStroke();
 }
 
 function draw() {
   background(0);
-  image(video, 0, 0);
+  image(video, 0, 0, width, height);
+  loadPixels(); // For pixel manipulation if needed
 
-  if (!tracker) {
-    console.error('Tracker is not initialized!');
-    return;
+  positions = tracker.getCurrentPosition();
+
+  if (positions && positions.length > 0) {
+    drawFeatureOutlines();
+    displayMeasurements();
   }
-
-  let currentPositions = tracker.getCurrentPosition();
-
-  // Ensure the currentPositions is valid
-  if (!currentPositions || currentPositions.length === 0) {
-    console.error('No face detected or tracker not working!');
-    return;
-  }
-
-  // Apply random distortions to facial features
-  distortFace(currentPositions);
-
-  // Draw the distorted face
-  noFill();
-  stroke(0, 255, 100);
-  strokeWeight(2);
-  beginShape();
-
-  // Draw all the landmarks with random distortion applied
-  for (let i = 0; i < currentPositions.length; i++) {
-    let [x, y] = currentPositions[i];
-    let dx = random(-distortionFactor, distortionFactor);
-    let dy = random(-distortionFactor, distortionFactor);
-    vertex(x + dx, y + dy);
-  }
-
-  endShape(CLOSE);
 }
 
-function distortFace(currentPositions) {
-  // Randomly distort eyes, nose, mouth, and face outline
-  for (let i = 0; i < currentPositions.length; i++) {
-    let [x, y] = currentPositions[i];
+function drawFeatureOutlines() {
+  stroke(0, 255, 0);
+  noFill();
 
-    // Apply distortions only to valid landmarks (checking for index range)
-    if (i >= 27 && i <= 32) {
-      let scaleFactor = random(0.9, 1.2);  // Eyes randomly scale
-      currentPositions[i][0] = x * scaleFactor;
-      currentPositions[i][1] = y * scaleFactor;
-    } else if (i >= 33 && i <= 38) {
-      let scaleFactor = random(0.9, 1.2);  // Eyes randomly scale
-      currentPositions[i][0] = x * scaleFactor;
-      currentPositions[i][1] = y * scaleFactor;
-    }
-
-    // Distort nose (indices: 39-42)
-    if (i >= 39 && i <= 42) {
-      let scaleFactor = random(0.9, 1.3);  // Nose randomly scales
-      currentPositions[i][0] = x * scaleFactor;
-      currentPositions[i][1] = y * scaleFactor;
-    }
-
-    // Distort mouth (indices: 48-59)
-    if (i >= 48 && i <= 59) {
-      let scaleFactor = random(0.8, 1.4);  // Mouth randomly scales
-      currentPositions[i][0] = x * scaleFactor;
-      currentPositions[i][1] = y * scaleFactor;
-    }
-
-    // Distort face outline (indices: 0-16)
-    if (i >= 0 && i <= 16) {
-      let scaleFactor = random(0.9, 1.1);  // Face outline randomly scales
-      currentPositions[i][0] = x * scaleFactor;
-      currentPositions[i][1] = y * scaleFactor;
-    }
+  // Draw lines connecting facial landmarks
+  beginShape();
+  for (let i = 0; i < positions.length; i++) {
+    vertex(positions[i][0], positions[i][1]);
   }
+  endShape(CLOSE);
+
+  // Draw points at each landmark
+  for (let i = 0; i < positions.length; i++) {
+    ellipse(positions[i][0], positions[i][1], 4, 4);
+  }
+}
+
+function displayMeasurements() {
+  // Example: Distance between eyes (points 27 and 32)
+  let leftEye = positions[27];
+  let rightEye = positions[32];
+  let eyeDistance = dist(leftEye[0], leftEye[1], rightEye[0], rightEye[1]);
+
+  // Display eye distance
+  noStroke();
+  fill(0, 255, 0);
+  text(`Eye Distance: ${nf(eyeDistance, 1, 2)} px`, 10, height - 20);
+
+  // Display coordinates of the nose tip (point 62)
+  let noseTip = positions[62];
+  text(`Nose Tip: (${int(noseTip[0])}, ${int(noseTip[1])})`, 10, height - 40);
 }
