@@ -105,35 +105,27 @@ function displayMeasurements(pos) {
     expression = ":(";
   }
 
-  // 💬 Draw square expression box floating above the face mapping
+  // 💬 Draw the "real" or "not real" status above the face (floating above forehead)
   let foreheadY = (pos[19][1] + pos[24][1]) / 2; // Midway between the eyes/forehead
-  let boxX = offsetX + (leftEye[0] + rightEye[0]) / 2 - 30;
-  let boxY = offsetY + foreheadY - 45; // Placing the box above the face
+  let statusX = offsetX + (leftEye[0] + rightEye[0]) / 2;
+  let statusY = offsetY + foreheadY - 50; // Position above the face
 
-  // Display "real" or "not real" text above the box with random chance
+  // Display "real" or "not real" text with a 15% larger size
   let status = "real"; // Default status
   if (random() < 0.05) { // 5% chance to display "not real"
     status = "not real";
   }
 
-  // Draw "real" or "not real" text above the box
-  textSize(7); // Smaller text size for status
+  textSize(8); // Slightly larger text for "real"/"not real"
   fill(255);
   textAlign(CENTER, CENTER);
-  text(status, boxX + 30, boxY - 20); // Position above the box
+  text(status, statusX, statusY); // Display status above face
 
-  // Transparent square box with no fill
-  noFill();
-  stroke(255); // White border
+  // Connecting line from status to face (align with face width)
+  stroke(255);
   strokeWeight(0.5);
-  rect(boxX, boxY, 60, 60, 5); // Square box with rounded corners
-
-  noStroke();
-  fill(255);
-  textSize(30); // Larger emoji text size inside the box
-  textAlign(CENTER, CENTER);
-  text(expression, boxX + 30, boxY + 30); // Centered in the square
-
+  line(statusX, statusY + 5, statusX, offsetY + pos[19][1] - 5); // Draw a line from status to face
+  
   // 📊 Display debug info under video
   textAlign(LEFT, BASELINE);
   let y = offsetY + videoHeight + 20;
