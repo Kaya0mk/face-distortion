@@ -2,15 +2,16 @@ let video;
 let tracker;
 let positions = [];
 let stablePositions = [];
-let videoWidth, videoHeight;
 let offsetX, offsetY;
+let videoWidth, videoHeight;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   pixelDensity(1);
 
-  videoWidth = int(windowWidth / 3 * 1.4);
-  videoHeight = int(windowHeight / 3 * 1.4);
+  // Video dimensions (MacBook Air screen is ~1440px wide → ~480x360 is 1/3 size)
+  videoWidth = 480;
+  videoHeight = 360;
 
   video = createCapture(VIDEO);
   video.size(videoWidth, videoHeight);
@@ -20,19 +21,18 @@ function setup() {
   tracker.init();
   tracker.start(video.elt);
 
-  textSize(14);
+  textSize(7); // 50% smaller
   fill(255);
   noStroke();
 }
 
 function draw() {
   background(0);
-
   offsetX = (width - videoWidth) / 2;
   offsetY = (height - videoHeight) / 2;
 
   image(video, offsetX, offsetY, videoWidth, videoHeight);
-  filter(GRAY);
+  filter(GRAY); // Black & white
 
   positions = tracker.getCurrentPosition();
 
@@ -45,7 +45,8 @@ function draw() {
     drawFeatureOutlines(stablePositions);
     displayMeasurements(stablePositions);
   } else {
-    text("No face detected", offsetX + 10, offsetY + videoHeight - 10);
+    fill(255);
+    text("No face detected", offsetX + 10, offsetY + videoHeight + 20);
   }
 }
 
@@ -54,10 +55,10 @@ function distortFace(pos) {
     let [x, y] = pos[i];
     let scale = 1;
 
-    if (i >= 27 && i <= 38) scale = random(0.95, 1.1);
-    else if (i >= 39 && i <= 42) scale = random(0.9, 1.2);
-    else if (i >= 48 && i <= 59) scale = random(0.85, 1.25);
-    else if (i >= 0 && i <= 16)  scale = random(0.95, 1.1);
+    if (i >= 27 && i <= 38) scale = random(0.95, 1.1); // Eyes
+    else if (i >= 39 && i <= 42) scale = random(0.9, 1.2); // Nose
+    else if (i >= 48 && i <= 59) scale = random(0.85, 1.25); // Mouth
+    else if (i >= 0 && i <= 16)  scale = random(0.95, 1.1); // Face outline
 
     pos[i][0] = x * scale;
     pos[i][1] = y * scale;
@@ -66,37 +67,51 @@ function distortFace(pos) {
 
 function drawFeatureOutlines(pos) {
   stroke(255);
-  strokeWeight(0.5); // EVEN THINNER lines
+  strokeWeight(0.5); // SUPER thin lines
   noFill();
 
   beginShape();
   for (let i = 0; i < pos.length; i++) {
-    vertex(pos[i][0] + offsetX, pos[i][1] + offsetY);
+    vertex(offsetX + pos[i][0], offsetY + pos[i][1]);
   }
   endShape(CLOSE);
 
   for (let i = 0; i < pos.length; i++) {
-    ellipse(pos[i][0] + offsetX, pos[i][1] + offsetY, 1.5, 1.5); // Smaller dots
+    ellipse(offsetX + pos[i][0], offsetY + pos[i][1], 2, 2); // smaller circles
   }
 }
 
 function displayMeasurements(pos) {
-  if (!pos[27] || !pos[32] || !pos[62] || !pos[48] || !pos[54]) return;
+  if (!pos[27] || !pos[32] || !pos[62] || !pos[48] || !pos[54] || !pos[57] || !pos[60]) return;
 
   let leftEye = pos[27];
   let rightEye = pos[32];
   let noseTip = pos[62];
   let leftMouth = pos[48];
   let rightMouth = pos[54];
+  let topLip = pos[60];
+  let bottomLip = pos[57];
 
   let eyeDist = dist(leftEye[0], leftEye[1], rightEye[0], rightEye[1]);
   let mouthWidth = dist(leftMouth[0], leftMouth[1], rightMouth[0], rightMouth[1]);
+  let mouthOpen = dist(topLip[1], topLip[0], bottomLip[1], bottomLip[0]);
+
+  let mouthCurve = rightMouth[1] - leftMouth[1];
+  let expression = "Neutral";
+
+  if (mouthWidth > 50 && mouthCurve < -3) {
+    expression = "Smiling 😀";
+  } else if (mouthWidth < 40 && mouthCurve > 3) {
+    expression = "Sad 😢";
+  }
 
   noStroke();
   fill(255);
-  text(`Eye Distance: ${nf(eyeDist, 1, 2)} px`, offsetX + 10, offsetY + videoHeight + 20);
-  text(`Nose Tip: (${int(noseTip[0])}, ${int(noseTip[1])})`, offsetX + 10, offsetY + videoHeight + 40);
-  text(`Mouth Width: ${nf(mouthWidth, 1, 2)} px`, offsetX + 10, offsetY + videoHeight + 60);
+  let y = offsetY + videoHeight + 20;
+  text(`Eye Distance: ${nf(eyeDist, 1, 2)} px`, offsetX + 10, y);
+  text(`Nose Tip: (${int(noseTip[0])}, ${int(noseTip[1])})`, offsetX + 10, y + 10);
+  text(`Mouth Width: ${nf(mouthWidth, 1, 2)} px`, offsetX + 10, y + 20);
+  text(`Expression: ${expression}`, offsetX + 10, y + 30);
 }
 
 function windowResized() {
