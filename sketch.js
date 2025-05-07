@@ -5,6 +5,9 @@ let stablePositions = [];
 let offsetX, offsetY;
 let videoWidth, videoHeight;
 
+let status = "real"; // Default status
+let statusChangeTimer = 0; // Timer to control the "real"/"not real" change
+
 function setup() {
   createCanvas(windowWidth, windowHeight);
   pixelDensity(1);
@@ -105,17 +108,27 @@ function displayMeasurements(pos) {
     expression = ":(";
   }
 
+  // Update status: "real" or "not real"
+  if (statusChangeTimer <= 0) {
+    // 80% chance to display "real"
+    if (random() < 0.8) {
+      status = "real";
+    } else {
+      status = "not real";
+    }
+
+    // Set a timer for how long the status stays the same
+    statusChangeTimer = random(200, 300); // Stay in current status for 200-300 frames
+  } else {
+    statusChangeTimer--; // Decrease the timer
+  }
+
   // 💬 Draw the "real" or "not real" status above the face (floating above forehead)
   let foreheadY = (pos[19][1] + pos[24][1]) / 2; // Midway between the eyes/forehead
   let statusX = offsetX + (leftEye[0] + rightEye[0]) / 2;
   let statusY = offsetY + foreheadY - 50; // Position above the face
 
   // Display "real" or "not real" text with a 15% larger size
-  let status = "real"; // Default status
-  if (random() < 0.05) { // 5% chance to display "not real"
-    status = "not real";
-  }
-
   textSize(8); // Slightly larger text for "real"/"not real"
   fill(255);
   textAlign(CENTER, CENTER);
