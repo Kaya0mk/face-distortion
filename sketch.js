@@ -2,18 +2,21 @@ let video;
 let tracker;
 let positions = [];
 let stablePositions = [];
-let videoWidth = 640;  // Fixed width for the video
-let videoHeight = 480; // Fixed height for the video
+let videoWidth, videoHeight;
 let offsetX, offsetY;
 
 function setup() {
-  // Smaller canvas size
-  createCanvas(800, 600);  // You can adjust this if needed
-  pixelDensity(1);
+  // Video feed size: 1/3 of MacBook Air screen size (approx 2560x1600)
+  videoWidth = Math.floor(windowWidth / 3);
+  videoHeight = Math.floor(windowHeight / 3);
 
-  // Center video feed
+  // Center video feed on canvas
   offsetX = (width - videoWidth) / 2;
   offsetY = (height - videoHeight) / 2;
+
+  // Create canvas
+  createCanvas(windowWidth, windowHeight);
+  pixelDensity(1);
 
   // Video capture from webcam
   video = createCapture(VIDEO);
@@ -102,6 +105,7 @@ function displayMeasurements(pos) {
 function windowResized() {
   // Resize canvas to window size
   resizeCanvas(windowWidth, windowHeight);
+  // Recalculate offsets for centering the video
   offsetX = (width - videoWidth) / 2;
   offsetY = (height - videoHeight) / 2;
 }
