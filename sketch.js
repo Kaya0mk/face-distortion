@@ -21,7 +21,7 @@ function setup() {
   tracker.init();
   tracker.start(video.elt);
 
-  textSize(20); // Increased text size for the emotion
+  textSize(7); // Smaller text for debug info
   fill(255);
   noStroke();
 }
@@ -110,14 +110,14 @@ function displayMeasurements(pos) {
   let boxX = offsetX + (leftEye[0] + rightEye[0]) / 2 - 30;
   let boxY = offsetY + foreheadY - 45; // Placing the box above the face
 
-  // Display "real" or "not real" above the box with random chance
+  // Display "real" or "not real" text above the box with random chance
   let status = "real"; // Default status
   if (random() < 0.05) { // 5% chance to display "not real"
     status = "not real";
   }
 
   // Draw "real" or "not real" text above the box
-  textSize(20);
+  textSize(7); // Smaller text size for status
   fill(255);
   textAlign(CENTER, CENTER);
   text(status, boxX + 30, boxY - 20); // Position above the box
@@ -130,13 +130,14 @@ function displayMeasurements(pos) {
 
   noStroke();
   fill(255);
-  textSize(30); // Larger text for the emotion
+  textSize(30); // Larger emoji text size inside the box
   textAlign(CENTER, CENTER);
   text(expression, boxX + 30, boxY + 30); // Centered in the square
 
   // 📊 Display debug info under video
   textAlign(LEFT, BASELINE);
   let y = offsetY + videoHeight + 20;
+  textSize(7); // Smaller text size for debug info
   text(`Eye Distance: ${nf(eyeDist, 1, 2)} px`, offsetX + 10, y);
   text(`Nose Tip: (${int(noseTip[0])}, ${int(noseTip[1])})`, offsetX + 10, y + 10);
   text(`Mouth Width: ${nf(mouthWidth, 1, 2)} px`, offsetX + 10, y + 20);
