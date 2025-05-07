@@ -6,55 +6,49 @@ let videoWidth, videoHeight;
 let offsetX, offsetY;
 
 function setup() {
-  // Video feed size: Increase by 40%
-  videoWidth = Math.floor(windowWidth / 3 * 1.4);  // 40% larger than 1/3 screen width
-  videoHeight = Math.floor(windowHeight / 3 * 1.4); // 40% larger than 1/3 screen height
-
-  // Center video feed on canvas
-  offsetX = (width - videoWidth) / 2;
-  offsetY = (height - videoHeight) / 2;
-
-  // Create canvas
   createCanvas(windowWidth, windowHeight);
   pixelDensity(1);
 
-  // Video capture from webcam
+  // Set video size to ~40% larger than 1/3 of screen
+  videoWidth = int(windowWidth / 3 * 1.4);
+  videoHeight = int(windowHeight / 3 * 1.4);
+
   video = createCapture(VIDEO);
   video.size(videoWidth, videoHeight);
   video.hide();
 
-  // Initialize clmtrackr
   tracker = new clm.tracker();
   tracker.init();
   tracker.start(video.elt);
 
-  // Set text size and color
   textSize(14);
-  fill(255);  // White text
+  fill(255); // White text
   noStroke();
 }
 
 function draw() {
-  background(0);  // Black background
+  background(0); // Black background
 
-  // Show video at the center and apply grayscale filter
+  // Center video
+  offsetX = (width - videoWidth) / 2;
+  offsetY = (height - videoHeight) / 2;
+
   image(video, offsetX, offsetY, videoWidth, videoHeight);
-  filter(GRAY);  // Black and white effect
+  filter(GRAY); // Black and white filter
 
-  // Get current face positions
   positions = tracker.getCurrentPosition();
 
   if (positions && positions.length > 0) {
-    // Save distorted face only every few frames to reduce flicker
+    // Smooth distortion every 10 frames
     if (frameCount % 10 === 0) {
-      stablePositions = JSON.parse(JSON.stringify(positions));  // Deep copy
+      stablePositions = JSON.parse(JSON.stringify(positions));
       distortFace(stablePositions);
     }
 
     drawFeatureOutlines(stablePositions);
     displayMeasurements(stablePositions);
   } else {
-    text("No face detected", 20, height - 20);
+    text("No face detected", offsetX + 10, offsetY + videoHeight - 10);
   }
 }
 
@@ -74,42 +68,36 @@ function distortFace(pos) {
 }
 
 function drawFeatureOutlines(pos) {
-  stroke(255);  // White outlines
-  strokeWeight(2);
+  stroke(255); // White lines
+  strokeWeight(1); // Thinner lines
   noFill();
 
   beginShape();
   for (let i = 0; i < pos.length; i++) {
-    vertex(pos[i][0] + offsetX, pos[i][1] + offsetY);  // Adjust coordinates for centered video
+    vertex(pos[i][0] + offsetX, pos[i][1] + offsetY);
   }
   endShape(CLOSE);
 
-  // Draw dots at landmarks
   for (let i = 0; i < pos.length; i++) {
-    ellipse(pos[i][0] + offsetX, pos[i][1] + offsetY, 4, 4);  // Adjust coordinates for centered video
+    ellipse(pos[i][0] + offsetX, pos[i][1] + offsetY, 2, 2); // Smaller white dots
   }
 }
 
 function displayMeasurements(pos) {
-  // Check if the positions array has enough points to access
-  if (pos.length > 62) {
-    let leftEye = pos[27];
-    let rightEye = pos[32];
-    let noseTip = pos[62];
-    let eyeDist = dist(leftEye[0], leftEye[1], rightEye[0], rightEye[1]);
+  if (!pos[27] || !pos[32] || !pos[62]) return; // Safety check
 
-    // Display eye distance and nose tip
-    noStroke();
-    fill(255);  // White text
-    text(`Eye Distance: ${nf(eyeDist, 1, 2)} px`, 20, height - 40);
-    text(`Nose Tip: (${int(noseTip[0])}, ${int(noseTip[1])})`, 20, height - 20);
-  }
+  let leftEye = pos[27];
+  let rightEye = pos[32];
+  let noseTip = pos[62];
+
+  let eyeDist = dist(leftEye[0], leftEye[1], rightEye[0], rightEye[1]);
+
+  noStroke();
+  fill(255);
+  text(`Eye Distance: ${nf(eyeDist, 1, 2)} px`, offsetX + 10, offsetY + videoHeight + 20);
+  text(`Nose Tip: (${int(noseTip[0])}, ${int(noseTip[1])})`, offsetX + 10, offsetY + videoHeight + 40);
 }
 
 function windowResized() {
-  // Resize canvas to window size
   resizeCanvas(windowWidth, windowHeight);
-  // Recalculate offsets for centering the video
-  offsetX = (width - videoWidth) / 2;
-  offsetY = (height - videoHeight) / 2;
 }
