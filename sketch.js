@@ -1,119 +1,119 @@
 let video;
-let faceapi;
-let detections = [];
-let hands;
-let canvasElement;
-let canvasCtx;
+let tracker;
+let positions = [];
+let stablePositions = [];
+let offsetX, offsetY;
+let videoWidth, videoHeight;
 
 function setup() {
-  canvasElement = createCanvas(windowWidth * 0.4, windowHeight * 0.4);
-  canvasCtx = canvasElement.elt.getContext('2d');
-  canvasElement.position((windowWidth - width) / 2, (windowHeight - height) / 2);
-  background(0);
+  createCanvas(windowWidth, windowHeight);
+  pixelDensity(1);
+
+  // Video dimensions (MacBook Air screen is ~1440px wide → ~480x360 is 1/3 size)
+  videoWidth = 480;
+  videoHeight = 360;
 
   video = createCapture(VIDEO);
-  video.size(width, height);
+  video.size(videoWidth, videoHeight);
   video.hide();
 
-  const faceOptions = { withLandmarks: true, withExpressions: true, minConfidence: 0.5 };
-  faceapi = ml5.faceApi(video, faceOptions, () => console.log("FaceAPI ready"));
-  faceapi.detect(gotFaces);
+  tracker = new clm.tracker();
+  tracker.init();
+  tracker.start(video.elt);
 
-  hands = new Hands({
-    locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
-  });
-
-  hands.setOptions({
-    maxNumHands: 2,
-    modelComplexity: 1,
-    minDetectionConfidence: 0.7,
-    minTrackingConfidence: 0.7
-  });
-  hands.onResults(onHandsResults);
-
-  const camera = new Camera(video.elt, {
-    onFrame: async () => await hands.send({ image: video.elt }),
-    width: width,
-    height: height
-  });
-  camera.start();
-}
-
-function gotFaces(err, result) {
-  if (err) return console.error(err);
-  detections = result;
-  faceapi.detect(gotFaces);
+  textSize(7); // 50% smaller
+  fill(255);
+  noStroke();
 }
 
 function draw() {
   background(0);
-  image(video, 0, 0, width, height);
-  noFill();
-  stroke(255);
-  strokeWeight(0.5);
+  offsetX = (width - videoWidth) / 2;
+  offsetY = (height - videoHeight) / 2;
 
-  if (detections.length > 0) {
-    const parts = detections[0].parts;
-    drawPart(parts.nose, true);
-    drawPart(parts.leftEye, true);
-    drawPart(parts.rightEye, true);
-    drawPart(parts.mouth, true);
-    drawMeasurements(parts);
-    drawExpression(detections[0].expressions);
-  }
-}
+  image(video, offsetX, offsetY, videoWidth, videoHeight);
+  filter(GRAY); // Black & white
 
-function drawPart(feature, closed) {
-  beginShape();
-  for (let pt of feature) vertex(pt._x, pt._y);
-  if (closed) endShape(CLOSE);
-  else endShape();
-}
+  positions = tracker.getCurrentPosition();
 
-function drawMeasurements(parts) {
-  const leftEye = parts.leftEye[0];
-  const rightEye = parts.rightEye[3];
-  const eyeDist = dist(leftEye._x, leftEye._y, rightEye._x, rightEye._y);
-  const nose = parts.nose[3];
-  fill(255);
-  noStroke();
-  textSize(8);
-  text(`Eye distance: ${eyeDist.toFixed(1)} px`, 10, height - 25);
-  text(`Nose tip at: (${nose._x.toFixed(1)}, ${nose._y.toFixed(1)})`, 10, height - 15);
-}
-
-function drawExpression(expressions) {
-  const sorted = Object.entries(expressions).sort((a, b) => b[1] - a[1]);
-  const primary = sorted[0][0];
-  let emoji = "";
-  if (primary === "happy") emoji = ":)";
-  else if (primary === "sad") emoji = ":(";
-  else if (primary === "angry") emoji = ">:(";
-  fill(255);
-  textSize(8);
-  text(`Expression: ${primary} ${emoji}`, 10, height - 35);
-}
-
-function onHandsResults(results) {
-  if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-    for (let landmarks of results.multiHandLandmarks) {
-      drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, { color: '#FFFFFF', lineWidth: 1 });
-      drawLandmarks(canvasCtx, landmarks, { color: '#FFFFFF', lineWidth: 0.5 });
-      // Example: distance between index tip (8) and thumb tip (4)
-      let d = dist(
-        landmarks[4].x * width,
-        landmarks[4].y * height,
-        landmarks[8].x * width,
-        landmarks[8].y * height
-      );
-      fill(255);
-      textSize(8);
-      text(`Thumb-Index dist: ${d.toFixed(1)} px`, 10, height - 45);
+  if (positions && positions.length > 0) {
+    if (frameCount % 10 === 0) {
+      stablePositions = JSON.parse(JSON.stringify(positions));
+      distortFace(stablePositions);
     }
+
+    drawFeatureOutlines(stablePositions);
+    displayMeasurements(stablePositions);
+  } else {
+    fill(255);
+    text("No face detected", offsetX + 10, offsetY + videoHeight + 20);
   }
+}
+
+function distortFace(pos) {
+  for (let i = 0; i < pos.length; i++) {
+    let [x, y] = pos[i];
+    let scale = 1;
+
+    if (i >= 27 && i <= 38) scale = random(0.95, 1.1); // Eyes
+    else if (i >= 39 && i <= 42) scale = random(0.9, 1.2); // Nose
+    else if (i >= 48 && i <= 59) scale = random(0.85, 1.25); // Mouth
+    else if (i >= 0 && i <= 16)  scale = random(0.95, 1.1); // Face outline
+
+    pos[i][0] = x * scale;
+    pos[i][1] = y * scale;
+  }
+}
+
+function drawFeatureOutlines(pos) {
+  stroke(255);
+  strokeWeight(0.5); // SUPER thin lines
+  noFill();
+
+  beginShape();
+  for (let i = 0; i < pos.length; i++) {
+    vertex(offsetX + pos[i][0], offsetY + pos[i][1]);
+  }
+  endShape(CLOSE);
+
+  for (let i = 0; i < pos.length; i++) {
+    ellipse(offsetX + pos[i][0], offsetY + pos[i][1], 2, 2); // smaller circles
+  }
+}
+
+function displayMeasurements(pos) {
+  if (!pos[27] || !pos[32] || !pos[62] || !pos[48] || !pos[54] || !pos[57] || !pos[60]) return;
+
+  let leftEye = pos[27];
+  let rightEye = pos[32];
+  let noseTip = pos[62];
+  let leftMouth = pos[48];
+  let rightMouth = pos[54];
+  let topLip = pos[60];
+  let bottomLip = pos[57];
+
+  let eyeDist = dist(leftEye[0], leftEye[1], rightEye[0], rightEye[1]);
+  let mouthWidth = dist(leftMouth[0], leftMouth[1], rightMouth[0], rightMouth[1]);
+  let mouthOpen = dist(topLip[1], topLip[0], bottomLip[1], bottomLip[0]);
+
+  let mouthCurve = rightMouth[1] - leftMouth[1];
+  let expression = "Neutral";
+
+  if (mouthWidth > 50 && mouthCurve < -3) {
+    expression = "Smiling 😀";
+  } else if (mouthWidth < 40 && mouthCurve > 3) {
+    expression = "Sad 😢";
+  }
+
+  noStroke();
+  fill(255);
+  let y = offsetY + videoHeight + 20;
+  text(`Eye Distance: ${nf(eyeDist, 1, 2)} px`, offsetX + 10, y);
+  text(`Nose Tip: (${int(noseTip[0])}, ${int(noseTip[1])})`, offsetX + 10, y + 10);
+  text(`Mouth Width: ${nf(mouthWidth, 1, 2)} px`, offsetX + 10, y + 20);
+  text(`Expression: ${expression}`, offsetX + 10, y + 30);
 }
 
 function windowResized() {
-  resizeCanvas(windowWidth * 0.4, windowHeight * 0.4);
-  canvasElement.position((windowWidth - width) / 2, (windowHeight - height) / 2);
+  resizeCanvas(windowWidth, windowHeight);
 }
