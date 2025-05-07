@@ -2,16 +2,25 @@ let video;
 let tracker;
 let positions = [];
 let stablePositions = [];
-let distortionFactor = 1;
+let videoWidth = 640;  // Fixed width for the video
+let videoHeight = 480; // Fixed height for the video
+let offsetX, offsetY;
 
 function setup() {
-  createCanvas(windowWidth, windowHeight);
+  // Smaller canvas size
+  createCanvas(800, 600);  // You can adjust this if needed
   pixelDensity(1);
 
+  // Center video feed
+  offsetX = (width - videoWidth) / 2;
+  offsetY = (height - videoHeight) / 2;
+
+  // Video capture from webcam
   video = createCapture(VIDEO);
-  video.size(width, height);
+  video.size(videoWidth, videoHeight);
   video.hide();
 
+  // Initialize clmtrackr
   tracker = new clm.tracker();
   tracker.init();
   tracker.start(video.elt);
@@ -24,9 +33,9 @@ function setup() {
 function draw() {
   background(255);
 
-  // Show video and apply grayscale
-  image(video, 0, 0, width, height);
-  filter(GRAY);
+  // Show video at the center and apply grayscale filter
+  image(video, offsetX, offsetY, videoWidth, videoHeight);
+  filter(GRAY);  // Black and white effect
 
   // Get current face positions
   positions = tracker.getCurrentPosition();
@@ -34,7 +43,7 @@ function draw() {
   if (positions && positions.length > 0) {
     // Save distorted face only every few frames to reduce flicker
     if (frameCount % 10 === 0) {
-      stablePositions = JSON.parse(JSON.stringify(positions));
+      stablePositions = JSON.parse(JSON.stringify(positions));  // Deep copy
       distortFace(stablePositions);
     }
 
@@ -61,18 +70,19 @@ function distortFace(pos) {
 }
 
 function drawFeatureOutlines(pos) {
-  stroke(0);
+  stroke(0); // Black outlines
   strokeWeight(2);
   noFill();
 
   beginShape();
   for (let i = 0; i < pos.length; i++) {
-    vertex(pos[i][0], pos[i][1]);
+    vertex(pos[i][0] + offsetX, pos[i][1] + offsetY);  // Adjust coordinates for centered video
   }
   endShape(CLOSE);
 
+  // Draw dots at landmarks
   for (let i = 0; i < pos.length; i++) {
-    ellipse(pos[i][0], pos[i][1], 4, 4);
+    ellipse(pos[i][0] + offsetX, pos[i][1] + offsetY, 4, 4);  // Adjust coordinates for centered video
   }
 }
 
@@ -82,6 +92,7 @@ function displayMeasurements(pos) {
   let noseTip = pos[62];
   let eyeDist = dist(leftEye[0], leftEye[1], rightEye[0], rightEye[1]);
 
+  // Display eye distance and nose tip
   noStroke();
   fill(0);
   text(`Eye Distance: ${nf(eyeDist, 1, 2)} px`, 20, height - 40);
@@ -89,5 +100,8 @@ function displayMeasurements(pos) {
 }
 
 function windowResized() {
+  // Resize canvas to window size
   resizeCanvas(windowWidth, windowHeight);
+  offsetX = (width - videoWidth) / 2;
+  offsetY = (height - videoHeight) / 2;
 }
