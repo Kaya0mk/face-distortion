@@ -58,7 +58,7 @@ function distortFace(pos) {
     if (i >= 27 && i <= 38) scale = random(0.95, 1.1); // Eyes
     else if (i >= 39 && i <= 42) scale = random(0.9, 1.2); // Nose
     else if (i >= 48 && i <= 59) scale = random(0.85, 1.25); // Mouth
-    else if (i >= 0 && i <= 16)  scale = random(0.95, 1.1); // Face outline
+    else if (i >= 0 && i <= 16) scale = random(0.95, 1.1); // Face outline
 
     pos[i][0] = x * scale;
     pos[i][1] = y * scale;
@@ -97,16 +97,31 @@ function displayMeasurements(pos) {
   let mouthOpen = dist(topLip[1], topLip[0], bottomLip[1], bottomLip[0]);
 
   let mouthCurve = rightMouth[1] - leftMouth[1];
-  let expression = "Neutral";
+  let expression = ":|"; // Neutral
 
   if (mouthWidth > 50 && mouthCurve < -3) {
-    expression = "Smiling 😀";
+    expression = ":)";
   } else if (mouthWidth < 40 && mouthCurve > 3) {
-    expression = "Sad 😢";
+    expression = ":(";
   }
+
+  // 💬 Draw expression box floating above the face mapping
+  let foreheadY = (pos[19][1] + pos[24][1]) / 2; // Midway between the eyes/forehead
+  let boxX = offsetX + (leftEye[0] + rightEye[0]) / 2 - 20;
+  let boxY = offsetY + foreheadY - 40; // Placing the box above the face
+  
+  fill(0);
+  stroke(255);
+  strokeWeight(0.5);
+  rect(boxX, boxY, 60, 30, 4); // Rounded box
 
   noStroke();
   fill(255);
+  textAlign(CENTER, CENTER);
+  text(expression, boxX + 30, boxY + 15);
+
+  // 📊 Display debug info under video
+  textAlign(LEFT, BASELINE);
   let y = offsetY + videoHeight + 20;
   text(`Eye Distance: ${nf(eyeDist, 1, 2)} px`, offsetX + 10, y);
   text(`Nose Tip: (${int(noseTip[0])}, ${int(noseTip[1])})`, offsetX + 10, y + 10);
