@@ -21,7 +21,7 @@ function setup() {
   tracker.init();
   tracker.start(video.elt);
 
-  textSize(7); // 50% smaller
+  textSize(20); // Increased text size for the emotion
   fill(255);
   noStroke();
 }
@@ -105,20 +105,34 @@ function displayMeasurements(pos) {
     expression = ":(";
   }
 
-  // 💬 Draw expression box floating above the face mapping
+  // 💬 Draw square expression box floating above the face mapping
   let foreheadY = (pos[19][1] + pos[24][1]) / 2; // Midway between the eyes/forehead
-  let boxX = offsetX + (leftEye[0] + rightEye[0]) / 2 - 20;
-  let boxY = offsetY + foreheadY - 40; // Placing the box above the face
-  
-  fill(0);
-  stroke(255);
+  let boxX = offsetX + (leftEye[0] + rightEye[0]) / 2 - 30;
+  let boxY = offsetY + foreheadY - 45; // Placing the box above the face
+
+  // Display "real" or "not real" above the box with random chance
+  let status = "real"; // Default status
+  if (random() < 0.05) { // 5% chance to display "not real"
+    status = "not real";
+  }
+
+  // Draw "real" or "not real" text above the box
+  textSize(20);
+  fill(255);
+  textAlign(CENTER, CENTER);
+  text(status, boxX + 30, boxY - 20); // Position above the box
+
+  // Transparent square box with no fill
+  noFill();
+  stroke(255); // White border
   strokeWeight(0.5);
-  rect(boxX, boxY, 60, 30, 4); // Rounded box
+  rect(boxX, boxY, 60, 60, 5); // Square box with rounded corners
 
   noStroke();
   fill(255);
+  textSize(30); // Larger text for the emotion
   textAlign(CENTER, CENTER);
-  text(expression, boxX + 30, boxY + 15);
+  text(expression, boxX + 30, boxY + 30); // Centered in the square
 
   // 📊 Display debug info under video
   textAlign(LEFT, BASELINE);
