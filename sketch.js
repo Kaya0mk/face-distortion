@@ -90,16 +90,19 @@ function drawFeatureOutlines(pos) {
 }
 
 function displayMeasurements(pos) {
-  let leftEye = pos[27];
-  let rightEye = pos[32];
-  let noseTip = pos[62];
-  let eyeDist = dist(leftEye[0], leftEye[1], rightEye[0], rightEye[1]);
+  // Check if the positions array has enough points to access
+  if (pos.length > 62) {
+    let leftEye = pos[27];
+    let rightEye = pos[32];
+    let noseTip = pos[62];
+    let eyeDist = dist(leftEye[0], leftEye[1], rightEye[0], rightEye[1]);
 
-  // Display eye distance and nose tip
-  noStroke();
-  fill(0);
-  text(`Eye Distance: ${nf(eyeDist, 1, 2)} px`, 20, height - 40);
-  text(`Nose Tip: (${int(noseTip[0])}, ${int(noseTip[1])})`, 20, height - 20);
+    // Display eye distance and nose tip
+    noStroke();
+    fill(0);
+    text(`Eye Distance: ${nf(eyeDist, 1, 2)} px`, 20, height - 40);
+    text(`Nose Tip: (${int(noseTip[0])}, ${int(noseTip[1])})`, 20, height - 20);
+  }
 }
 
 function windowResized() {
