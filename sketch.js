@@ -6,9 +6,9 @@ let videoWidth, videoHeight;
 let offsetX, offsetY;
 
 function setup() {
-  // Video feed size: 1/3 of MacBook Air screen size (approx 2560x1600)
-  videoWidth = Math.floor(windowWidth / 3);
-  videoHeight = Math.floor(windowHeight / 3);
+  // Video feed size: Increase by 40%
+  videoWidth = Math.floor(windowWidth / 3 * 1.4);  // 40% larger than 1/3 screen width
+  videoHeight = Math.floor(windowHeight / 3 * 1.4); // 40% larger than 1/3 screen height
 
   // Center video feed on canvas
   offsetX = (width - videoWidth) / 2;
@@ -28,13 +28,14 @@ function setup() {
   tracker.init();
   tracker.start(video.elt);
 
+  // Set text size and color
   textSize(14);
-  fill(0);
+  fill(255);  // White text
   noStroke();
 }
 
 function draw() {
-  background(255);
+  background(0);  // Black background
 
   // Show video at the center and apply grayscale filter
   image(video, offsetX, offsetY, videoWidth, videoHeight);
@@ -73,7 +74,7 @@ function distortFace(pos) {
 }
 
 function drawFeatureOutlines(pos) {
-  stroke(0); // Black outlines
+  stroke(255);  // White outlines
   strokeWeight(2);
   noFill();
 
@@ -99,7 +100,7 @@ function displayMeasurements(pos) {
 
     // Display eye distance and nose tip
     noStroke();
-    fill(0);
+    fill(255);  // White text
     text(`Eye Distance: ${nf(eyeDist, 1, 2)} px`, 20, height - 40);
     text(`Nose Tip: (${int(noseTip[0])}, ${int(noseTip[1])})`, 20, height - 20);
   }
